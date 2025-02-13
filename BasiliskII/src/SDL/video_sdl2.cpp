@@ -46,10 +46,12 @@
 
 #include <SDL_mutex.h>
 #include <SDL_thread.h>
+#include <SDL_image.h>
 #include <errno.h>
 #include <vector>
 #include <string>
 #include <math.h>
+#include <filesystem>
 
 #ifdef __MACOSX__
 #include "utils_macosx.h"
@@ -784,6 +786,19 @@ static SDL_Surface *init_sdl_video(int width, int height, int depth, Uint32 flag
 		SDL_AddEventWatch(&on_sdl_event_generated, NULL);
 		did_add_event_watch = true;
 	}
+	
+#if SDL_VERSION_ATLEAST(2, 0, 0)
+	// Allow for custom window icons (for integration with application launchers).
+	const char *sdl_icon_path = PrefsFindString("sdlicon");
+	if (sdl_icon_path != nullptr && sdl_icon_path[0] == '\0') {
+		if (std::filesystem::exists(sdl_icon_path)) {
+			SDL_Surface* icon = IMG_Load(sdl_icon_path);
+			SDL_SetWindowIcon(sdl_window, icon);
+		} else {
+			printf("stlicon doesn't exist, path: %s", sdl_icon_path);
+		}
+	}
+#endif
 
 	if (!sdl_renderer) {
 		const char *render_driver = PrefsFindString("sdlrender");
